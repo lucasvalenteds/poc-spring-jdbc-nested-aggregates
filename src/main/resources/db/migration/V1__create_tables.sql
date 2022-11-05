@@ -23,3 +23,20 @@ CREATE TABLE incident
 
     CONSTRAINT pk_incident_id PRIMARY KEY (incident_id)
 );
+
+
+
+CREATE SEQUENCE intervention_intervention_id_sequence START WITH 1 INCREMENT BY 1;
+CREATE TABLE incident_intervention
+(
+    incident_id                      INTEGER,
+    incident_intervention_id         INTEGER DEFAULT nextval('intervention_intervention_id_sequence'),
+    incident_intervention_type_id    INTEGER,
+    incident_intervention_type_name  VARCHAR,
+    incident_intervention_created_at TIMESTAMP WITH TIME ZONE,
+    incident_intervention_key        INTEGER,
+
+    CONSTRAINT pk_incident_intervention_id PRIMARY KEY (incident_intervention_id),
+    CONSTRAINT fk_incident_id FOREIGN KEY (incident_id) REFERENCES incident (incident_id),
+    CONSTRAINT fk_incident_intervention_type_id FOREIGN KEY (incident_intervention_type_id) REFERENCES intervention (intervention_id)
+);

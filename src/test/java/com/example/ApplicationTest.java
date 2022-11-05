@@ -2,6 +2,7 @@ package com.example;
 
 import com.example.incident.Incident;
 import com.example.incident.IncidentRepository;
+import com.example.incident.Intervention;
 import com.example.intervention.InterventionType;
 import com.example.intervention.InterventionTypeRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -16,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
+import org.springframework.data.jdbc.core.mapping.AggregateReference;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -100,5 +102,39 @@ class ApplicationTest {
         assertThat(incident.getId()).isEqualTo(1L);
         assertThat(incident.getDescription()).isEqualTo(description);
         assertThat(incident.getCreatedAt()).isEqualTo(createdAt);
+        assertThat(incident.getInterventions()).isNull();
+    }
+
+    @Test
+    @Order(3)
+    void interveneByMakingPhoneCall() {
+        incident.addIntervention(Intervention.builder()
+                .type(AggregateReference.to(phoneCall.getId()))
+                .name(phoneCall.getName())
+                .createdAt(Instant.now(Clock.systemUTC()))
+                .build());
+
+        incident = incidentRepository.save(incident);
+
+        // Now the incident has one intervention
+        assertThat(incident.getInterventions()).hasSize(1);
+        assertThat(incident.getInterventions().get(0).getId()).isEqualTo(1L);
+    }
+
+    @Test
+    @Order(4)
+    void interveneByEnqueueingTheIncident() {
+        incident.addIntervention(Intervention.builder()
+                .type(AggregateReference.to(enqueue.getId()))
+                .name(enqueue.getName())
+                .createdAt(Instant.now(Clock.systemUTC()))
+                .build());
+
+        incident = incidentRepository.save(incident);
+
+        // Now the incident has two interventions
+        assertThat(incident.getInterventions()).hasSize(2);
+        assertThat(incident.getInterventions().get(0).getId()).isEqualTo(1L);
+        assertThat(incident.getInterventions().get(1).getId()).isEqualTo(2L);
     }
 }
