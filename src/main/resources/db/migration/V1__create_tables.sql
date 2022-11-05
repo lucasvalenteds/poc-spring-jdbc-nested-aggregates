@@ -40,3 +40,15 @@ CREATE TABLE incident_intervention
     CONSTRAINT fk_incident_id FOREIGN KEY (incident_id) REFERENCES incident (incident_id),
     CONSTRAINT fk_incident_intervention_type_id FOREIGN KEY (incident_intervention_type_id) REFERENCES intervention (intervention_id)
 );
+
+
+
+CREATE TABLE incident_intervention_note
+(
+    incident_intervention_id              INTEGER,
+    incident_intervention_note_content    TEXT,
+    incident_intervention_note_created_at TIMESTAMP WITH TIME ZONE,
+    incident_intervention_note_key        INTEGER,
+
+    CONSTRAINT fk_incident_intervention_id FOREIGN KEY (incident_intervention_id) REFERENCES incident_intervention (incident_intervention_id)
+);

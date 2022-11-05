@@ -3,6 +3,7 @@ package com.example;
 import com.example.incident.Incident;
 import com.example.incident.IncidentRepository;
 import com.example.incident.Intervention;
+import com.example.incident.Note;
 import com.example.intervention.InterventionType;
 import com.example.intervention.InterventionTypeRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -108,33 +109,94 @@ class ApplicationTest {
     @Test
     @Order(3)
     void interveneByMakingPhoneCall() {
+        final var note = Note.builder()
+                .content("Called the Ops teams and told John two Web Services were down")
+                .createdAt(Instant.now(Clock.systemUTC()))
+                .build();
+
         incident.addIntervention(Intervention.builder()
                 .type(AggregateReference.to(phoneCall.getId()))
                 .name(phoneCall.getName())
                 .createdAt(Instant.now(Clock.systemUTC()))
-                .build());
+                .build()
+                .addNote(note));
 
         incident = incidentRepository.save(incident);
 
         // Now the incident has one intervention
         assertThat(incident.getInterventions()).hasSize(1);
+        assertThat(incident.getInterventions().get(0).getNotes()).hasSize(1);
+
+        // The first intervention has one note
         assertThat(incident.getInterventions().get(0).getId()).isEqualTo(1L);
+        assertThat(incident.getInterventions().get(0).getNotes().get(0).getContent()).isEqualTo(note.getContent());
+        assertThat(incident.getInterventions().get(0).getNotes().get(0).getCreatedAt()).isEqualTo(note.getCreatedAt());
     }
 
     @Test
     @Order(4)
     void interveneByEnqueueingTheIncident() {
+        final var note = Note.builder()
+                .content("Enqueued the incident while we wait the Ops team response")
+                .createdAt(Instant.now(Clock.systemUTC()))
+                .build();
+
         incident.addIntervention(Intervention.builder()
                 .type(AggregateReference.to(enqueue.getId()))
                 .name(enqueue.getName())
                 .createdAt(Instant.now(Clock.systemUTC()))
-                .build());
+                .build()
+                .addNote(note));
 
         incident = incidentRepository.save(incident);
 
         // Now the incident has two interventions
         assertThat(incident.getInterventions()).hasSize(2);
+        assertThat(incident.getInterventions().get(0).getNotes()).hasSize(1);
+        assertThat(incident.getInterventions().get(1).getNotes()).hasSize(1);
+
+        // First intervention note is unchanged
         assertThat(incident.getInterventions().get(0).getId()).isEqualTo(1L);
+        assertThat(incident.getInterventions().get(0).getNotes().get(0).getContent()).isNotEqualTo(note.getContent());
+        assertThat(incident.getInterventions().get(0).getNotes().get(0).getCreatedAt()).isBefore(note.getCreatedAt());
+
+        // Second intervention created with one note
         assertThat(incident.getInterventions().get(1).getId()).isEqualTo(2L);
+        assertThat(incident.getInterventions().get(1).getNotes().get(0).getContent()).isEqualTo(note.getContent());
+        assertThat(incident.getInterventions().get(1).getNotes().get(0).getCreatedAt()).isEqualTo(note.getCreatedAt());
+    }
+
+    @Test
+    @Order(5)
+    void updatingPhoneCallIntervention() {
+        final var note = Note.builder()
+                .content("The Ops team returned the call and told the Web Services were restored")
+                .createdAt(Instant.now(Clock.systemUTC()))
+                .build();
+
+        incident.getInterventions()
+                .get(0)
+                .addNote(note);
+
+        incident = incidentRepository.save(incident);
+
+        // Incident still have two interventions, but now the first one has two notes instead of one
+        assertThat(incident.getInterventions()).hasSize(2);
+        assertThat(incident.getInterventions().get(0).getNotes()).hasSize(2);
+        assertThat(incident.getInterventions().get(1).getNotes()).hasSize(1);
+
+        // First intervention note is unchanged
+        assertThat(incident.getInterventions().get(0).getId()).isEqualTo(1L);
+        assertThat(incident.getInterventions().get(0).getNotes().get(0).getContent()).isNotEqualTo(note.getContent());
+        assertThat(incident.getInterventions().get(0).getNotes().get(0).getCreatedAt()).isBefore(note.getCreatedAt());
+
+        // Note has been added to the first intervention
+        assertThat(incident.getInterventions().get(0).getNotes().get(1).getContent()).isEqualTo(note.getContent());
+        assertThat(incident.getInterventions().get(0).getNotes().get(1).getCreatedAt()).isEqualTo(note.getCreatedAt());
+
+        // Second intervention is unchanged
+        assertThat(incident.getInterventions().get(1).getId()).isEqualTo(2L);
+        assertThat(incident.getInterventions().get(1).getNotes().get(0).getContent()).isNotEqualTo(note.getContent());
+        assertThat(incident.getInterventions().get(1).getNotes().get(0).getCreatedAt()).isBefore(note.getCreatedAt());
     }
 }
