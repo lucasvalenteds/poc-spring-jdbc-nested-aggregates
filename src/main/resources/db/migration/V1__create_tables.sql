@@ -11,3 +11,15 @@ CREATE TABLE intervention
 INSERT INTO intervention (intervention_name)
 VALUES ('PHONE_CALL'),
        ('ENQUEUE');
+
+
+
+CREATE SEQUENCE incident_id_sequence START WITH 1 INCREMENT BY 1;
+CREATE TABLE incident
+(
+    incident_id          INTEGER DEFAULT nextval('incident_id_sequence'),
+    incident_description VARCHAR,
+    incident_created_at  TIMESTAMP WITH TIME ZONE,
+
+    CONSTRAINT pk_incident_id PRIMARY KEY (incident_id)
+);
